@@ -3,6 +3,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/kappelas-sdk.svg)](https://pypi.org/project/kappelas-sdk/)
 [![Python version](https://img.shields.io/pypi/pyversions/kappelas-sdk.svg)](https://pypi.org/project/kappelas-sdk/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![GitHub](https://img.shields.io/badge/GitHub-source-181717?logo=github)](https://github.com/Arnel7/kappelas-sdk-python)
 
 **Official Python SDK for the [Kappela](https://kappelas.com) messaging platform.**  
 Build bots and personal automations — send messages, handle events, manage chats.
