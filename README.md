@@ -31,7 +31,7 @@ Build bots and personal automations — send messages, handle events, manage cha
 
 You need a bot token from **BotMother**, the official Kappela bot manager.
 
-1. Open Kappela and start a conversation with **BotMother** at `kappelas.com/bot/botmother_bot`
+1. Open Kappela and start a conversation with [**BotMother**](https://kappelas.com/bot/botmother_bot)
 2. Follow the instructions to create a bot
 3. BotMother gives you a token — keep it secret, it gives full control over your bot
 
