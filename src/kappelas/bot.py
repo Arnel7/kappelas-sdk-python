@@ -53,7 +53,7 @@ class KappelaBot(EventEmitter):
         async def on_callback(cb):
             await bot.messages.send(cb.chat_id, f'Button: {cb.callback_data}')
 
-        asyncio.run(bot.start())
+        asyncio.run(bot.run())
     """
 
     #: Send and manage messages.

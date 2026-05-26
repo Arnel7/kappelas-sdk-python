@@ -14,7 +14,7 @@ Quick start::
     async def on_message(msg):
         await bot.messages.send(msg.chat_id, f'Echo: {msg.text}')
 
-    asyncio.run(bot.start())
+    asyncio.run(bot.run())
 """
 
 from kappelas.bot import KappelaBot

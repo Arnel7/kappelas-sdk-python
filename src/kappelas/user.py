@@ -39,7 +39,7 @@ class KappelaUser(EventEmitter):
         async def on_message(msg):
             print('New message from', msg.sender_name, ':', msg.text)
 
-        asyncio.run(me.start())
+        asyncio.run(me.run())
     """
 
     #: Send and manage messages.

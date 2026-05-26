@@ -4,8 +4,38 @@
 [![Python version](https://img.shields.io/pypi/pyversions/kappelas-sdk.svg)](https://pypi.org/project/kappelas-sdk/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Official Python SDK for the [Kappela](https://kappelas.com) messaging API.  
+**Official Python SDK for the [Kappela](https://kappelas.com) messaging platform.**  
 Build bots and personal automations — send messages, handle events, manage chats.
+
+---
+
+## Table of contents
+
+- [Prerequisites](#prerequisites)
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Async-first design](#async-first-design)
+- [Events — WebSocket vs Webhook](#events--websocket-vs-webhook)
+- [API reference](#api-reference)
+  - [messages](#messages)
+  - [chats](#chats)
+  - [webhooks](#webhooks)
+  - [profile](#profile)
+- [Keyboards](#keyboards)
+- [Error handling](#error-handling)
+- [File input](#file-input)
+
+---
+
+## Prerequisites
+
+You need a bot token from **BotMother**, the official Kappela bot manager.
+
+1. Open Kappela and start a conversation with **BotMother** at `kappelas.com/bot/botmother_bot`
+2. Follow the instructions to create a bot
+3. BotMother gives you a token — keep it secret, it gives full control over your bot
+
+For personal automation (sending messages as yourself), generate an API key from your Kappela account settings (`sk_...`).
 
 ---
 
@@ -15,7 +45,7 @@ Build bots and personal automations — send messages, handle events, manage cha
 pip install kappelas-sdk
 ```
 
-Requires Python 3.11+.
+Requires **Python 3.11+**.
 
 ---
 
@@ -35,9 +65,9 @@ async def on_message(msg):
 
 @bot.on('callback_query')
 async def on_callback(cb):
-    await bot.messages.send(cb.chat_id, f'Button clicked: {cb.callback_data}')
+    await bot.messages.send(cb.chat_id, f'You clicked: {cb.callback_data}')
 
-asyncio.run(bot.start())
+asyncio.run(bot.run())
 ```
 
 ### Personal automation
@@ -50,14 +80,14 @@ me = KappelaUser('sk_your_api_key')
 
 @me.on('message')
 async def on_message(msg):
-    print(f'New message from {msg.sender_name}: {msg.text}')
+    print(f'[{msg.chat_id}] {msg.sender_name}: {msg.text}')
 
-asyncio.run(me.start())
+asyncio.run(me.run())
 ```
 
 ---
 
-## Async usage
+## Async-first design
 
 Every method that touches the network is a coroutine — `await` it:
 
@@ -65,194 +95,50 @@ Every method that touches the network is a coroutine — `await` it:
 result = await bot.messages.send(chat_id, 'Hello!')
 ```
 
-Use `asyncio.run()` as the entry point for scripts, or integrate into any async framework (FastAPI, aiohttp, etc.).
-
----
-
-## Context manager
+Use `asyncio.run()` as the entry point for standalone scripts, or integrate into any async framework (FastAPI, aiohttp, etc.).
 
 Both `KappelaBot` and `KappelaUser` support `async with`, which automatically closes the WebSocket and HTTP client on exit:
 
 ```python
 async def main():
     async with KappelaBot('YOUR_BOT_TOKEN') as bot:
-        await bot.messages.send(CHAT_ID, 'Hello from context manager!')
-        await bot.start()
+        @bot.on('message')
+        async def on_message(msg):
+            await bot.messages.send(msg.chat_id, f'Echo: {msg.text}')
+
+        await bot.run()
 
 asyncio.run(main())
 ```
 
 ---
 
-## Events
+## Events — WebSocket vs Webhook
 
-Register handlers with `on()` (persistent) or `once()` (fires once then auto-removes).
+| Mode | Method | Best for |
+|------|--------|----------|
+| **WebSocket** | `await bot.run()` | Development, local scripts |
+| **Webhook** | `await bot.webhooks.set()` + `bot.handle_webhook()` | Production servers |
 
-| Event            | Handler signature                        | Description                           |
-|------------------|------------------------------------------|---------------------------------------|
-| `message`        | `async def handler(msg: Message)`        | Incoming message of any type          |
-| `callback_query` | `async def handler(cb: CallbackQuery)`   | Inline button clicked by a user       |
-| `connected`      | `async def handler()`                    | WebSocket connected or reconnected    |
-| `disconnected`   | `async def handler(code, reason)`        | WebSocket disconnected                |
-| `error`          | `async def handler(exc: Exception)`      | Connection or handler error           |
-| `raw`            | `async def handler(event: dict)`         | Raw `{ type, data }` wire event       |
+The same `on('message')` and `on('callback_query')` handlers work in both modes — no code change needed when switching.
 
-### Decorator usage
+### WebSocket (development)
 
 ```python
+bot = KappelaBot('YOUR_BOT_TOKEN')
+
 @bot.on('message')
-async def on_message(msg):
-    ...
+async def on_message(msg): ...
 
-@bot.once('connected')
-async def on_first_connect():
-    print('Connected!')
+@bot.on('callback_query')
+async def on_callback(cb): ...
+
+asyncio.run(bot.run())   # blocks, auto-reconnects on disconnect
 ```
 
-### Method call usage
+`run()` blocks until `stop()` is called. Use `start()` if you need to connect in the background inside an already-running event loop.
 
-```python
-async def on_message(msg):
-    ...
-
-bot.on('message', on_message)
-bot.off('message', on_message)  # remove handler
-```
-
----
-
-## API reference
-
-### `KappelaBot(token, *, base_url, max_retries, timeout, ws_max_retries)`
-
-| Parameter        | Type    | Default                        | Description                         |
-|------------------|---------|--------------------------------|-------------------------------------|
-| `token`          | `str`   | —                              | Bot token from BotFather            |
-| `base_url`       | `str`   | `'https://api.kappelas.com'`   | API base URL                        |
-| `max_retries`    | `int`   | `2`                            | HTTP retries on 429 / 5xx           |
-| `timeout`        | `float` | `30.0`                         | HTTP request timeout (seconds)      |
-| `ws_max_retries` | `int`   | `12`                           | WebSocket reconnect attempt limit   |
-
-### `KappelaUser(api_key, *, base_url, max_retries, timeout, ws_max_retries)`
-
-Same parameters as `KappelaBot` but takes a personal API key (`sk_...`).
-
----
-
-## Messages
-
-```python
-# Send text
-result = await bot.messages.send(chat_id, 'Hello!')
-
-# Send with inline keyboard
-from kappelas import InlineKeyboard, InlineKeyboardButton
-
-kb = InlineKeyboard(inline_keyboard=[[
-    InlineKeyboardButton(text='Click me', callback_data='btn_1'),
-    InlineKeyboardButton(text='Visit', url='https://kappelas.com'),
-]])
-await bot.messages.send(chat_id, 'Choose:', reply_markup=kb)
-
-# Send a photo
-with open('photo.jpg', 'rb') as f:
-    await bot.messages.send_photo(chat_id, f, caption='Look at this!')
-
-# Send video
-await bot.messages.send_video(chat_id, video_bytes, caption='Watch this')
-
-# Send document
-from kappelas import FileData
-file = FileData(data=pdf_bytes, filename='report.pdf', content_type='application/pdf')
-await bot.messages.send_document(chat_id, file)
-
-# Send audio
-await bot.messages.send_audio(chat_id, audio_bytes)
-
-# Typing indicator
-await bot.messages.send_typing(chat_id)
-await bot.messages.send_typing(chat_id, is_typing=False)
-
-# Edit a message
-await bot.messages.edit(chat_id, message_id, new_text='Updated text')
-
-# Delete a message
-await bot.messages.delete(chat_id, message_id)
-```
-
-### Reply to a message
-
-```python
-await bot.messages.send(
-    chat_id, 'Replying!',
-    reply_to_id=original_message_id,
-)
-```
-
-### Delete previous bot message
-
-```python
-await bot.messages.send(chat_id, 'New message', delete_previous=True)
-```
-
----
-
-## Carousel
-
-```python
-from kappelas import KappelaBot, CarouselCard
-
-cards = [
-    CarouselCard(
-        id='card_1',
-        title='Product A',
-        subtitle='Best seller',
-        image_url='https://example.com/a.jpg',
-        button_text='Buy now',
-    ),
-    CarouselCard(id='card_2', title='Product B'),
-]
-
-result = await bot.messages.send_carousel(
-    chat_id, cards,
-    text='Check out our products:',
-    quick_reply_buttons=['See more', 'Contact us'],
-)
-```
-
----
-
-## Chats
-
-```python
-# Paginated list
-page = await bot.chats.list(limit=20, offset=0)
-print(page.chats, page.has_more)
-
-# Iterate over all chats
-async for chat in bot.chats.iterate():
-    print(chat.chat_id, chat.title or chat.type)
-```
-
----
-
-## Webhooks
-
-Use webhooks in production instead of a persistent WebSocket connection.
-
-```python
-# Register webhook
-await bot.webhooks.set('https://your-server.com/kappela-webhook', secret='my_secret')
-
-# Check status
-info = await bot.webhooks.get_info()
-print(info.active, info.url)
-
-# Remove webhook
-await bot.webhooks.delete()
-```
-
-### FastAPI integration
+### Webhook (production)
 
 ```python
 from fastapi import FastAPI, Request
@@ -265,93 +151,313 @@ bot = KappelaBot('YOUR_BOT_TOKEN')
 async def on_message(msg):
     await bot.messages.send(msg.chat_id, f'Echo: {msg.text}')
 
+@bot.on('callback_query')
+async def on_callback(cb):
+    await bot.messages.send(cb.chat_id, f'Clicked: {cb.callback_data}')
+
+@app.on_event('startup')
+async def register_webhook():
+    await bot.webhooks.set('https://your-server.com/kappela-webhook')
+
 @app.post('/kappela-webhook')
 async def webhook(request: Request):
     bot.handle_webhook(await request.json())
     return {'ok': True}
 ```
 
----
+> Do **not** call `bot.run()` in webhook mode.
 
-## Profile
+### Event reference
+
+| Event | Handler signature | Description |
+|-------|-------------------|-------------|
+| `message` | `async def handler(msg: Message)` | Incoming message of any type |
+| `callback_query` | `async def handler(cb: CallbackQuery)` | Inline button clicked by a user |
+| `connected` | `async def handler()` | WebSocket connected or reconnected |
+| `disconnected` | `async def handler(code, reason)` | WebSocket disconnected |
+| `error` | `async def handler(exc: Exception)` | Connection or handler error |
+| `raw` | `async def handler(event: dict)` | Raw `{ type, data }` wire event |
+
+### `CallbackQuery` fields
 
 ```python
-# Bot profile
-profile = await bot.profile.get()
-print(profile.username, profile.about)
+@bot.on('callback_query')
+async def on_callback(cb):
+    cb.chat_id          # int         — chat where the button was clicked
+    cb.sender_id        # str         — UUID of the user who clicked
+    cb.sender_nom       # str | None  — display name (e.g. "Arnel LAWSON")
+    cb.sender_username  # str | None  — username (e.g. "arnell")
+    cb.callback_data    # str         — value set on the button
+    cb.sent_at          # int         — Unix timestamp (seconds)
+```
 
-# User profile
-profile = await me.profile.get()
-print(profile.nom, profile.is_premium)
+> Clicks are deduplicated server-side — your handler fires exactly once per click.
+
+### Decorator vs method usage
+
+```python
+# Decorator (persistent)
+@bot.on('message')
+async def on_message(msg): ...
+
+# Method call (persistent)
+async def on_message(msg): ...
+bot.on('message', on_message)
+bot.off('message', on_message)   # remove handler
+
+# fires once then auto-removes
+@bot.once('connected')
+async def on_first_connect(): ...
 ```
 
 ---
 
-## Keyboard types
+## API reference
 
-### Inline keyboard (buttons inside the message)
+### Constructor
+
+#### `KappelaBot(token, *, base_url, max_retries, timeout, ws_max_retries)`
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `token` | `str` | — | Bot token from BotMother (required) |
+| `base_url` | `str` | `'https://api.kappelas.com'` | Override API base URL |
+| `max_retries` | `int` | `2` | HTTP retry count on 429 / 5xx |
+| `timeout` | `float` | `30.0` | Per-request timeout (seconds) |
+| `ws_max_retries` | `int` | `12` | Max WebSocket reconnect attempts |
+
+#### `KappelaUser(api_key, *, base_url, max_retries, timeout, ws_max_retries)`
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `api_key` | `str` | — | Personal API key `sk_...` (required) |
+| `base_url` | `str` | `'https://api.kappelas.com'` | Override API base URL |
+| `max_retries` | `int` | `2` | HTTP retry count on 429 / 5xx |
+| `timeout` | `float` | `30.0` | Per-request timeout (seconds) |
+| `ws_max_retries` | `int` | `12` | Max WebSocket reconnect attempts |
+
+---
+
+### `messages`
+
+#### `messages.send(chat_id, text, *, reply_markup, reply_to_id, delete_previous)` → `SendResult`
 
 ```python
-from kappelas import InlineKeyboard, InlineKeyboardButton
+result = await bot.messages.send(
+    chat_id       = 42,
+    text          = 'Hello!',
+    reply_to_id   = 123,           # optional — reply to a message
+    delete_previous = False,       # optional
+    reply_markup  = InlineKeyboard(inline_keyboard=[[
+        InlineKeyboardButton(text='Yes', callback_data='yes'),
+        InlineKeyboardButton(text='No',  callback_data='no'),
+    ]]),
+)
+# → SendResult(message_id=..., created_at=...)
+```
 
-kb = InlineKeyboard(inline_keyboard=[
+#### `messages.send_photo(chat_id, photo, *, caption, reply_to_id, delete_previous, reply_markup)` → `SendMediaResult`
+
+```python
+with open('banner.png', 'rb') as f:
+    await bot.messages.send_photo(chat_id, f, caption='Check this out!')
+# → SendMediaResult(message_id=..., created_at=..., media_id=...)
+```
+
+#### `messages.send_video` / `send_document` / `send_audio` → `SendMediaResult`
+
+Same signature — replace the file parameter (`video`, `document`, `audio`) with your file.
+
+#### `messages.send_carousel(chat_id, carousel, *, text, quick_reply_buttons)` → `SendCarouselResult`
+
+```python
+from kappelas import CarouselCard
+
+await bot.messages.send_carousel(
+    chat_id  = 42,
+    text     = 'Pick a product:',
+    carousel = [
+        CarouselCard(id='p1', title='Widget A', subtitle='$9.99',  button_text='Buy'),
+        CarouselCard(id='p2', title='Widget B', subtitle='$19.99', button_text='Buy'),
+    ],
+    quick_reply_buttons=['See more', 'Cancel'],
+)
+```
+
+#### `messages.edit(chat_id, message_id, *, new_text, new_extra_data)` → `EditMessageResult`
+
+```python
+# Edit text
+await bot.messages.edit(42, 123, new_text='Updated!')
+
+# Edit inline keyboard only (no text change)
+await bot.messages.edit(42, 123, new_extra_data={
+    'inline_keyboard': [[{'text': 'Done ✅', 'callback_data': 'done'}]]
+})
+# → EditMessageResult(edited=True, message_id=...)
+```
+
+#### `messages.send_typing(chat_id, *, is_typing)` → `TypingResult`
+
+```python
+await bot.messages.send_typing(42)                      # show
+await bot.messages.send_typing(42, is_typing=False)     # hide
+```
+
+#### `messages.delete(chat_id, message_id)` → `DeleteResult`
+
+```python
+await bot.messages.delete(42, 123)
+# → DeleteResult(deleted=True)
+```
+
+---
+
+### `chats`
+
+#### `chats.list(*, limit, offset)` → `ChatsResult`
+
+```python
+page = await bot.chats.list(limit=20, offset=0)
+print(page.chats, page.has_more)
+```
+
+#### `chats.iterate(page_size?)` → `AsyncGenerator[Chat]`
+
+```python
+async for chat in bot.chats.iterate():
+    print(chat.chat_id, chat.title, chat.type)
+```
+
+---
+
+### `webhooks`
+
+#### `webhooks.set(url, *, secret)` → `WebhookSetResult`
+
+```python
+await bot.webhooks.set('https://your-server.com/kappela-webhook')
+```
+
+#### `webhooks.get_info()` → `WebhookInfo`
+
+```python
+info = await bot.webhooks.get_info()
+# → WebhookInfo(active=True, url='https://...', created_at=...)
+```
+
+#### `webhooks.delete()` → `WebhookDeleteResult`
+
+```python
+await bot.webhooks.delete()
+# → WebhookDeleteResult(active=False)
+```
+
+---
+
+### `profile`
+
+#### `profile.get()` → `BotProfile | UserProfile`
+
+```python
+profile = await bot.profile.get()
+# BotProfile  → user_id, username, is_bot=True, about, description, avatar_url
+# UserProfile → id, username, nom, is_bot=False, is_premium, avatar_url, ...
+```
+
+---
+
+## Keyboards
+
+Three types of keyboard can be passed as `reply_markup` on any `send*` call:
+
+```python
+from kappelas import InlineKeyboard, InlineKeyboardButton, ReplyKeyboard, ScrollKeyboard
+
+# Inline buttons — attached to the message
+inline = InlineKeyboard(inline_keyboard=[
     [
-        InlineKeyboardButton(text='Option A', callback_data='a'),
-        InlineKeyboardButton(text='Option B', callback_data='b'),
+        InlineKeyboardButton(text='Yes', callback_data='yes'),
+        InlineKeyboardButton(text='No',  callback_data='no'),
     ],
     [
         InlineKeyboardButton(text='Open website', url='https://kappelas.com'),
     ],
 ])
-```
 
-### Reply keyboard (persistent input bar buttons)
-
-```python
-from kappelas import ReplyKeyboard
-
-kb = ReplyKeyboard(keyboard=[
-    ['Yes', 'No'],
+# Reply keyboard — shown below the input bar
+reply = ReplyKeyboard(keyboard=[
+    ['Option A', 'Option B'],
     ['Cancel'],
 ])
+
+# Scroll keyboard — horizontal scrollable chips
+scroll = ScrollKeyboard(scroll_keyboard=['Small', 'Medium', 'Large'])
 ```
-
-### Scroll keyboard (horizontal scrollable chips)
-
-```python
-from kappelas import ScrollKeyboard
-
-kb = ScrollKeyboard(scroll_keyboard=['Option 1', 'Option 2', 'Option 3'])
-```
-
----
-
-## File input
-
-Media methods accept three forms of file input:
-
-| Type               | Example                              |
-|--------------------|--------------------------------------|
-| `bytes`            | `open('img.jpg', 'rb').read()`       |
-| `IO[bytes]`        | `open('img.jpg', 'rb')`              |
-| `FileData`         | `FileData(data=b'...', filename='img.jpg', content_type='image/jpeg')` |
 
 ---
 
 ## Error handling
 
+All API errors raise `KappelaError` with structured fields:
+
 ```python
 from kappelas import KappelaError
 
 try:
-    await bot.messages.send(chat_id, 'Hello')
+    await bot.messages.send(999, 'Hi')
 except KappelaError as e:
-    print(e.error_code)   # 'NOT_FOUND', 'UNAUTHORIZED', etc.
-    print(e.status)       # HTTP status code
-    print(e.hint)         # human-readable description
-    print(e.solutions)    # list of suggested fixes
-    print(e.request_id)   # include when contacting support
-    print(e)              # full formatted block
+    e.error_code   # 'NOT_FOUND'
+    e.status       # 404
+    e.hint         # 'The requested resource does not exist.'
+    e.solutions    # ['Check the ID is correct', ...]
+    e.request_id   # include when contacting support
+    print(e)       # full formatted block
+```
+
+### Error codes
+
+| Code | HTTP | Meaning |
+|------|------|---------|
+| `UNAUTHORIZED` | 401 | Token or API key invalid / expired |
+| `FORBIDDEN` | 403 | Missing permission or role |
+| `NOT_FOUND` | 404 | Resource does not exist |
+| `MISSING_FIELD` | 400 | Required parameter missing |
+| `INVALID_FIELD` | 400 | Parameter has wrong type or format |
+| `CONFLICT` | 409 | Resource already exists |
+| `METHOD_NOT_ALLOWED` | 405 | Wrong HTTP method |
+| `INVALID_PATH` | 404 | API path does not exist |
+| `INTERNAL_ERROR` | 500 | Unexpected server error |
+| `SERVICE_UNAVAILABLE` | 503 | Service temporarily down |
+| `UPSTREAM_ERROR` | 502 | Upstream service error |
+
+---
+
+## File input
+
+Media methods accept files in several forms:
+
+| Type | Example |
+|------|---------|
+| `bytes` | `open('img.jpg', 'rb').read()` |
+| `IO[bytes]` | `open('img.jpg', 'rb')` |
+| `FileData` | `FileData(data=b'...', filename='img.jpg', content_type='image/jpeg')` |
+
+```python
+from kappelas import FileData
+
+# bytes
+await bot.messages.send_photo(chat_id, open('photo.jpg', 'rb').read())
+
+# file object
+with open('photo.jpg', 'rb') as f:
+    await bot.messages.send_photo(chat_id, f)
+
+# explicit metadata
+await bot.messages.send_document(
+    chat_id,
+    FileData(data=pdf_bytes, filename='report.pdf', content_type='application/pdf'),
+)
 ```
 
 ---
