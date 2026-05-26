@@ -9,7 +9,7 @@ description = "Official Kappela SDK for Python — build bots and personal autom
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
-authors = [{name = "Arnell LAWSON", email = "arnellawson7@gmail.com"}]
+authors = [{name = "Arnel LAWSON", email = "arnellawson7@gmail.com"}]
 keywords = ["kappela", "bot", "sdk", "messaging", "api"]
 classifiers = [
     "Development Status :: 4 - Beta",

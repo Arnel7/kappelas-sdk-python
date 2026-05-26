@@ -107,15 +107,27 @@ class KappelaUser(EventEmitter):
     # ─── Public API ──────────────────────────────────────────────────────────
 
     async def start(self) -> None:
-        """Connect via WebSocket and start receiving events.
+        """Connect via WebSocket in the background.
 
-        Prefer ``webhooks.set()`` for production. Use ``start()`` in
-        development or local scripts.
+        Returns immediately. Use :meth:`run` to block until stopped.
         """
         await self._ws.connect()
 
+    async def run(self) -> None:
+        """Connect via WebSocket and block until :meth:`stop` is called.
+
+        Example::
+
+            asyncio.run(me.run())
+        """
+        self._stop_event = asyncio.Event()
+        await self.start()
+        await self._stop_event.wait()
+
     async def stop(self) -> None:
         """Close the WebSocket connection and stop reconnecting."""
+        if hasattr(self, '_stop_event'):
+            self._stop_event.set()
         await self._ws.disconnect()
         await self._http.close()
 

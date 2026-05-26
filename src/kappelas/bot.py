@@ -120,21 +120,38 @@ class KappelaBot(EventEmitter):
     # ─── Public API ──────────────────────────────────────────────────────────
 
     async def start(self) -> None:
-        """Connect via WebSocket and start receiving events.
+        """Connect via WebSocket in the background.
 
-        This coroutine connects to Kappela and keeps the event loop alive
-        while the bot is running.  Your ``on('message')`` and
-        ``on('callback_query')`` handlers will be called for every incoming
-        event.
+        Returns immediately after the connection is established.
+        Use :meth:`run` if you want to block until the bot is stopped.
 
         Example::
 
-            asyncio.run(bot.start())
+            async def main():
+                await bot.start()
+                await asyncio.Event().wait()   # keep the loop alive
+
+            asyncio.run(main())
         """
         await self._ws.connect()
 
+    async def run(self) -> None:
+        """Connect via WebSocket and block until :meth:`stop` is called.
+
+        This is the idiomatic entry point for a long-running bot.
+
+        Example::
+
+            asyncio.run(bot.run())
+        """
+        self._stop_event = asyncio.Event()
+        await self.start()
+        await self._stop_event.wait()
+
     async def stop(self) -> None:
         """Close the WebSocket connection and stop reconnecting."""
+        if hasattr(self, '_stop_event'):
+            self._stop_event.set()
         await self._ws.disconnect()
         await self._http.close()
 

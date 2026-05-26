@@ -105,7 +105,7 @@ class WSClient:
             except Exception:
                 pass
 
-        self._recv_task = asyncio.get_event_loop().create_task(self._recv_loop())
+        self._recv_task = asyncio.get_running_loop().create_task(self._recv_loop())
 
     async def _recv_loop(self) -> None:
         try:

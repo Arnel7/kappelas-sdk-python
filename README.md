@@ -358,4 +358,4 @@ except KappelaError as e:
 
 ## License
 
-MIT © Arnell LAWSON
+MIT © Arnel LAWSON
