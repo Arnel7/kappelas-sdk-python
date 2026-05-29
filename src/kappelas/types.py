@@ -281,7 +281,7 @@ class CallbackQuery:
     #: UUID of the user who clicked the button.
     sender_id:       str
     #: Display name of the user who clicked. None if unresolvable.
-    sender_nom:      str | None
+    sender_name:     str | None
     #: Username of the user who clicked. None if unresolvable.
     sender_username: str | None
     #: Value of `callback_data` on the button that was clicked.

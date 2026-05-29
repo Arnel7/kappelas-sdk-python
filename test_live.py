@@ -29,7 +29,7 @@ async def on_connected():
 
 @bot.on('callback_query')
 async def on_callback(cb):
-    print(f'[→] Clic reçu — sender="{cb.sender_nom or cb.sender_id}" data="{cb.callback_data}"')
+    print(f'[→] Clic reçu — sender="{cb.sender_name or cb.sender_id}" data="{cb.callback_data}"')
     result = await bot.messages.send(cb.chat_id, f'Tu as cliqué : {cb.callback_data} ✅')
     print(f'[✓] Réponse envoyée — message_id={result.message_id}')
 

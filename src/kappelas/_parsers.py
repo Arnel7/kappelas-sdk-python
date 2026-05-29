@@ -207,7 +207,7 @@ def parse_callback_query(d: dict[str, Any]) -> CallbackQuery:
     return CallbackQuery(
         chat_id         = int(d['chat_id']),
         sender_id       = str(d['sender_id']),
-        sender_nom      = d.get('sender_nom'),
+        sender_name     = d.get('sender_name') or d.get('sender_nom'),
         sender_username = d.get('sender_username'),
         callback_data   = str(d['callback_data']),
         sent_at         = int(d['sent_at']),
@@ -330,7 +330,7 @@ def parse_webhook_body(body: dict[str, Any]) -> tuple[str, Any] | None:
         cb = CallbackQuery(
             chat_id         = int(body['chat_id']),
             sender_id       = str(body['sender_id']),
-            sender_nom      = body.get('sender_nom'),
+            sender_name     = body.get('sender_name') or body.get('sender_nom'),
             sender_username = body.get('sender_username'),
             callback_data   = str(body['callback_data']),
             sent_at         = int(body['sent_at']),

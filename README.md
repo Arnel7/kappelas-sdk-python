@@ -330,7 +330,7 @@ async def on_message(msg):
 async def on_callback(cb):
     cb.chat_id          # int        — chat where the button was clicked
     cb.sender_id        # str        — UUID of the user who clicked
-    cb.sender_nom       # str | None — display name (e.g. "Arnel LAWSON")
+    cb.sender_name      # str | None — display name (e.g. "Arnel LAWSON")
     cb.sender_username  # str | None — username (e.g. "arnell")
     cb.callback_data    # str        — value set on the button
     cb.sent_at          # int        — Unix timestamp (seconds)

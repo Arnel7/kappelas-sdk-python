@@ -167,7 +167,7 @@ async def main():
 
     @bot.on('callback_query')
     async def on_callback(cb):
-        print(f'\n[→] Bouton cliqué — chat_id={cb.chat_id} sender="{cb.sender_nom or cb.sender_id}" data="{cb.callback_data}"')
+        print(f'\n[→] Bouton cliqué — chat_id={cb.chat_id} sender="{cb.sender_name or cb.sender_id}" data="{cb.callback_data}"')
         try:
             result = await bot.messages.send(cb.chat_id, f'Tu as cliqué : {cb.callback_data}')
             print(f'[✓] Réponse callback envoyée — message_id={result.message_id}')
@@ -677,7 +677,7 @@ async def main():
             'type':            'callback',
             'chat_id':         CHAT_ID,
             'sender_id':       'test-user-uuid',
-            'sender_nom':      'Test User',
+            'sender_name':     'Test User',
             'sender_username': 'testuser',
             'callback_data':   cb_marker,
             'sent_at':         int(time.time()),
