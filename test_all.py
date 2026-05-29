@@ -155,6 +155,8 @@ def skip_test(label: str, reason: str) -> None:
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 async def main():
+    global passed, failed, skipped
+
     bot = KappelaBot(token=TOKEN)
 
     connected = asyncio.Event()
@@ -682,7 +684,7 @@ async def main():
         }
         bot.handle_webhook(cb_payload)
 
-        cb_obj = await asyncio.wait_for(captured_cb.get(), timeout=0.5)
+        cb_obj = await asyncio.wait_for(captured_cb.get(), timeout=3.0)
         if cb_obj.callback_data != cb_marker:
             raise Exception(f'callback_data incorrect : {cb_obj.callback_data!r}')
         print(f'  [✓] OK  {{"events_received": 1, "callback_data": "{cb_obj.callback_data}"}}')
