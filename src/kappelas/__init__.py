@@ -12,7 +12,7 @@ Quick start::
 
     @bot.on('message')
     async def on_message(msg):
-        await bot.messages.send(msg.chat_id, f'Echo: {msg.text}')
+        await bot.reply(msg, f'Echo: {msg.text}')
 
     asyncio.run(bot.run())
 """
@@ -34,7 +34,9 @@ from kappelas.types import (
     InlineKeyboard,
     InlineKeyboardButton,
     ReplyKeyboard,
+    ReplyKeyboardButton,
     ScrollKeyboard,
+    ScrollKeyboardButton,
     # Carousel
     CarouselCard,
     # Webhook
@@ -49,19 +51,43 @@ from kappelas.types import (
     DeleteResult,
     WebhookSetResult,
     WebhookDeleteResult,
+    # Chat member management
+    ChatMemberInfo,
+    AddChatMemberParams,
+    AddChatMemberResult,
+    BanChatMemberParams,
+    BanChatMemberResult,
+    LeaveChatParams,
+    LeaveChatResult,
+    PromoteChatMemberParams,
+    PromoteChatMemberResult,
+    GetChatAdministratorsParams,
+    GetChatAdministratorsResult,
+    GetChatMemberParams,
+    # Invite links
+    ChatInviteLink,
+    CreateChatInviteLinkParams,
+    GetChatInviteLinksParams,
+    GetChatInviteLinksResult,
+    RevokeChatInviteLinkParams,
+    RevokeChatInviteLinkResult,
+    # Bot group membership
+    BotGroupEntry,
+    GetMyGroupsResult,
     # File input
     FileData,
     # Type aliases (Literal unions)
     MessageType,
     MessageStatus,
     ChatType,
+    ParticipantRole,
     PrivacySetting,
     ErrorCode,
     ReplyMarkup,
     FileInput,
 )
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 __all__ = [
     # Main classes
@@ -81,7 +107,9 @@ __all__ = [
     'InlineKeyboard',
     'InlineKeyboardButton',
     'ReplyKeyboard',
+    'ReplyKeyboardButton',
     'ScrollKeyboard',
+    'ScrollKeyboardButton',
     'ReplyMarkup',
     # Carousel
     'CarouselCard',
@@ -97,6 +125,29 @@ __all__ = [
     'DeleteResult',
     'WebhookSetResult',
     'WebhookDeleteResult',
+    # Chat member management
+    'ChatMemberInfo',
+    'AddChatMemberParams',
+    'AddChatMemberResult',
+    'BanChatMemberParams',
+    'BanChatMemberResult',
+    'LeaveChatParams',
+    'LeaveChatResult',
+    'PromoteChatMemberParams',
+    'PromoteChatMemberResult',
+    'GetChatAdministratorsParams',
+    'GetChatAdministratorsResult',
+    'GetChatMemberParams',
+    # Invite links
+    'ChatInviteLink',
+    'CreateChatInviteLinkParams',
+    'GetChatInviteLinksParams',
+    'GetChatInviteLinksResult',
+    'RevokeChatInviteLinkParams',
+    'RevokeChatInviteLinkResult',
+    # Bot group membership
+    'BotGroupEntry',
+    'GetMyGroupsResult',
     # File input
     'FileData',
     'FileInput',
@@ -104,6 +155,7 @@ __all__ = [
     'MessageType',
     'MessageStatus',
     'ChatType',
+    'ParticipantRole',
     'PrivacySetting',
     'ErrorCode',
     # Version

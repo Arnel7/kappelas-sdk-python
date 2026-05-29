@@ -11,7 +11,7 @@ from kappelas.resources.chats import ChatsResource
 from kappelas.resources.messages import MessagesResource
 from kappelas.resources.profile import ProfileResource
 from kappelas.resources.webhooks import WebhooksResource
-from kappelas.types import CallbackQuery, Message
+from kappelas.types import CallbackQuery, Message, ReplyMarkup, SendResult
 
 
 def _to_ws_url(http_url: str, path: str) -> str:
@@ -159,6 +159,38 @@ class KappelaBot(EventEmitter):
     def connected(self) -> bool:
         """``True`` if the WebSocket is currently open."""
         return self._ws.is_connected()
+
+    async def reply(
+        self,
+        msg:             Message,
+        text:            str,
+        *,
+        reply_markup:    ReplyMarkup | None = None,
+        delete_previous: bool               = False,
+    ) -> SendResult:
+        """Reply to *msg* by quoting it in the same chat.
+
+        Shorthand for ``bot.messages.send(msg.chat_id, text, reply_to_id=msg.id, ...)``.
+
+        Args:
+            msg:             The :class:`~kappelas.types.Message` to reply to.
+            text:            Text of the reply.
+            reply_markup:    Optional keyboard markup.
+            delete_previous: If ``True``, delete the bot's previous message first.
+
+        Example::
+
+            @bot.on('message')
+            async def on_msg(msg):
+                await bot.reply(msg, f'Echo: {msg.text}')
+        """
+        return await self.messages.send(
+            msg.chat_id,
+            text,
+            reply_to_id     = msg.id,
+            reply_markup    = reply_markup,
+            delete_previous = delete_previous,
+        )
 
     def handle_webhook(self, body: dict[str, Any]) -> None:
         """Process a flat webhook payload from Kappela.

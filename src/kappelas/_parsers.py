@@ -3,20 +3,31 @@ from __future__ import annotations
 from typing import Any
 
 from kappelas.types import (
+    AddChatMemberResult,
+    BanChatMemberResult,
+    BotGroupEntry,
     BotProfile,
     CallbackQuery,
     CarouselCard,
     Chat,
+    ChatInviteLink,
+    ChatMemberInfo,
     ChatsResult,
     DeleteResult,
     EditMessageResult,
+    GetChatAdministratorsResult,
+    GetChatInviteLinksResult,
+    GetMyGroupsResult,
     InlineKeyboard,
     InlineKeyboardButton,
+    LeaveChatResult,
     Message,
     MessageType,
     Participant,
+    PromoteChatMemberResult,
     ReplyKeyboard,
     ReplySnapshot,
+    RevokeChatInviteLinkResult,
     ScrollKeyboard,
     SendCarouselResult,
     SendMediaResult,
@@ -72,6 +83,7 @@ def parse_message(d: dict[str, Any]) -> Message:
         client_msg_id     = d.get('client_msg_id'),
         width             = d.get('width'),
         height            = d.get('height'),
+        chat_type         = d.get('chat_type'),
     )
 
 
@@ -82,6 +94,7 @@ def parse_participant(d: dict[str, Any]) -> Participant:
         is_bot     = bool(d.get('is_bot', False)),
         is_premium = bool(d.get('is_premium', False)),
         avatar_url = d.get('avatar_url'),
+        role       = d.get('role'),
     )
 
 
@@ -201,6 +214,88 @@ def parse_callback_query(d: dict[str, Any]) -> CallbackQuery:
     )
 
 
+# ─── Chat member management parsers ──────────────────────────────────────────
+
+def parse_chat_member_info(d: dict[str, Any]) -> ChatMemberInfo:
+    return ChatMemberInfo(
+        user_id = str(d['user_id']),
+        role    = d['role'],
+    )
+
+
+def parse_add_chat_member_result(d: dict[str, Any]) -> AddChatMemberResult:
+    return AddChatMemberResult(description=str(d.get('description', '')))
+
+
+def parse_ban_chat_member_result(d: dict[str, Any]) -> BanChatMemberResult:
+    return BanChatMemberResult(description=str(d.get('description', '')))
+
+
+def parse_leave_chat_result(d: dict[str, Any]) -> LeaveChatResult:
+    return LeaveChatResult(description=str(d.get('description', '')))
+
+
+def parse_promote_chat_member_result(d: dict[str, Any]) -> PromoteChatMemberResult:
+    return PromoteChatMemberResult(
+        user_id = str(d['user_id']),
+        role    = d['role'],
+    )
+
+
+def parse_get_chat_administrators_result(d: dict[str, Any]) -> GetChatAdministratorsResult:
+    """The API returns the admins array directly as ``result`` (not wrapped in an object).
+
+    ``d`` must be in the shape ``{'admins': [...]}`` — callers normalise the raw list.
+    """
+    return GetChatAdministratorsResult(
+        admins=[parse_chat_member_info(a) for a in (d.get('admins') or [])]
+    )
+
+
+# ─── Invite link parsers ──────────────────────────────────────────────────────
+
+def parse_chat_invite_link(d: dict[str, Any]) -> ChatInviteLink:
+    return ChatInviteLink(
+        code       = str(d['code']),
+        url        = str(d['url']),
+        max_uses   = int(d.get('max_uses', 0)),
+        use_count  = int(d.get('use_count', 0)),
+        expires_at = d.get('expires_at'),
+        created_at = int(d['created_at']),
+    )
+
+
+def parse_get_chat_invite_links_result(d: dict[str, Any]) -> GetChatInviteLinksResult:
+    return GetChatInviteLinksResult(
+        invite_links=[parse_chat_invite_link(l) for l in (d.get('invite_links') or [])]
+    )
+
+
+def parse_revoke_chat_invite_link_result(d: dict[str, Any]) -> RevokeChatInviteLinkResult:
+    return RevokeChatInviteLinkResult(
+        revoked = bool(d.get('revoked', False)),
+        code    = str(d['code']),
+    )
+
+
+# ─── Bot group membership parsers ─────────────────────────────────────────────
+
+def parse_bot_group_entry(d: dict[str, Any]) -> BotGroupEntry:
+    return BotGroupEntry(
+        chat_id           = int(d['chat_id']),
+        type              = d['type'],
+        title             = d.get('title'),
+        participant_count = int(d.get('participant_count', 0)),
+        bot_role          = d['bot_role'],
+    )
+
+
+def parse_get_my_groups_result(d: dict[str, Any]) -> GetMyGroupsResult:
+    return GetMyGroupsResult(
+        groups=[parse_bot_group_entry(g) for g in (d.get('groups') or [])]
+    )
+
+
 # ─── WS event parsing ─────────────────────────────────────────────────────────
 
 def parse_ws_event(body: dict[str, Any]) -> tuple[str, Any] | None:
@@ -260,6 +355,7 @@ def parse_webhook_body(body: dict[str, Any]) -> tuple[str, Any] | None:
             mentions          = [],
             forwarded_from    = None,
             expires_at        = None,
+            chat_type         = body.get('chat_type'),
         )
         return ('message', msg)
 

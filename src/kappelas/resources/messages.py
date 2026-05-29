@@ -5,7 +5,7 @@ from dataclasses import asdict
 from typing import Any
 
 
-from kappelas._http import HttpClient, _serialize_reply_markup
+from kappelas._http import HttpClient, _serialize_keyboard_button, _serialize_reply_markup
 from kappelas._parsers import (
     parse_delete_result,
     parse_edit_message_result,
@@ -144,7 +144,8 @@ class MessagesResource:
         carousel:             list[CarouselCard],
         *,
         text:                 str | None    = None,
-        quick_reply_buttons:  list[str] | None = None,
+        quick_reply_buttons:  list[Any] | None = None,
+        reply_to_id:          int | None      = None,
     ) -> SendCarouselResult:
         """Send a product / card carousel.
 
@@ -153,13 +154,19 @@ class MessagesResource:
             carousel:            List of :class:`~kappelas.types.CarouselCard` items.
             text:                Optional introductory text.
             quick_reply_buttons: Optional list of quick-reply button labels.
+                                 Accepts plain strings or
+                                 :class:`~kappelas.types.ScrollKeyboardButton` objects
+                                 for a separate ``callback_data``.
+            reply_to_id:         Reply to an existing message by ID.
         """
         body: dict[str, Any] = {
             'chat_id':  chat_id,
             'carousel': [asdict(c) for c in carousel],  # type: ignore[call-overload]
         }
         if text                is not None: body['text']                = text
-        if quick_reply_buttons is not None: body['quick_reply_buttons'] = quick_reply_buttons
+        if quick_reply_buttons is not None:
+            body['quick_reply_buttons'] = [_serialize_keyboard_button(b) for b in quick_reply_buttons]
+        if reply_to_id         is not None: body['reply_to_id']         = reply_to_id
 
         raw = await self._http.post_json(f'{self._base}/sendCarousel', body)
         return parse_send_carousel_result(raw)

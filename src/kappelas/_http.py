@@ -39,9 +39,40 @@ def _file_input_to_bytes_and_meta(
     return raw, filename, 'application/octet-stream'
 
 
+def _serialize_keyboard_button(btn: Any) -> Any:
+    """Serialise a ReplyKeyboardButton or plain string to its wire form.
+
+    * ``"label"``                                → ``"label"`` (short form)
+    * ``ReplyKeyboardButton(text="label")``      → ``"label"`` (short form)
+    * ``ReplyKeyboardButton(text="A", callback_data="B")`` → ``{"text":"A","callback_data":"B"}``
+    """
+    if isinstance(btn, str):
+        return btn
+    cb = btn.callback_data
+    if cb is None or cb == btn.text:
+        return btn.text
+    return {'text': btn.text, 'callback_data': cb}
+
+
 def _serialize_reply_markup(rm: object) -> dict[str, Any]:
     """Convert a ReplyMarkup dataclass to a plain dict for JSON serialisation."""
+    from kappelas.types import ReplyKeyboard, ScrollKeyboard
     from dataclasses import asdict
+
+    if isinstance(rm, ReplyKeyboard):
+        return {
+            'keyboard': [
+                [_serialize_keyboard_button(btn) for btn in row]
+                for row in rm.keyboard
+            ]
+        }
+    if isinstance(rm, ScrollKeyboard):
+        return {
+            'scroll_keyboard': [
+                _serialize_keyboard_button(btn) for btn in rm.scroll_keyboard
+            ]
+        }
+    # InlineKeyboard — asdict() handles nested dataclasses correctly
     return asdict(rm)  # type: ignore[arg-type]
 
 

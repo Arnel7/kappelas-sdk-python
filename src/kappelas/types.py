@@ -30,6 +30,8 @@ ChatType = Literal['private', 'group', 'channel']
 
 PrivacySetting = Literal['everyone', 'contacts', 'nobody']
 
+ParticipantRole = Literal['member', 'admin']
+
 
 # ─── File input ───────────────────────────────────────────────────────────────
 
@@ -79,6 +81,9 @@ class Message:
     client_msg_id:      str | None = None
     width:              int | None = None
     height:             int | None = None
+    #: Type of conversation ("private", "group", "channel").
+    #: Always present on WS and webhook events; may be absent on history results.
+    chat_type:          ChatType | None = None
 
 
 # ─── Chat ────────────────────────────────────────────────────────────────────
@@ -91,6 +96,8 @@ class Participant:
     is_bot:     bool
     is_premium: bool
     avatar_url: str | None
+    #: Role in the conversation. Present on groups/channels; absent on private chats.
+    role:       ParticipantRole | None = None
 
 
 @dataclass
@@ -154,13 +161,37 @@ class InlineKeyboard:
 
 
 @dataclass
+class ReplyKeyboardButton:
+    """A button in a reply or scroll keyboard.
+
+    Short form — label and callback value are identical::
+
+        ReplyKeyboardButton(text="Option A")
+
+    Long form — different label and callback value::
+
+        ReplyKeyboardButton(text="✅ Confirm", callback_data="confirm_yes")
+    """
+    text:          str
+    callback_data: str | None = None
+
+
+#: ScrollKeyboardButton is an alias for ReplyKeyboardButton.
+ScrollKeyboardButton = ReplyKeyboardButton
+
+
+@dataclass
 class ReplyKeyboard:
-    keyboard: list[list[str]]
+    #: Each inner list is a row; each element is a button label (str) or
+    #: a :class:`ReplyKeyboardButton` for separate label / callback_data.
+    keyboard: list[list[ReplyKeyboardButton | str]]
 
 
 @dataclass
 class ScrollKeyboard:
-    scroll_keyboard: list[str]
+    #: Flat list of buttons shown as horizontal chips.
+    #: Each element is a button label (str) or a :class:`ReplyKeyboardButton`.
+    scroll_keyboard: list[ReplyKeyboardButton | str]
 
 
 ReplyMarkup = InlineKeyboard | ReplyKeyboard | ScrollKeyboard
@@ -257,3 +288,191 @@ class CallbackQuery:
     callback_data:   str
     #: Unix timestamp (seconds).
     sent_at:         int
+
+
+# ─── Chat member management ──────────────────────────────────────────────────
+
+@dataclass
+class ChatMemberInfo:
+    """Minimal member record returned by :meth:`~kappelas.resources.chats.ChatsResource.get_member`
+    and :meth:`~kappelas.resources.chats.ChatsResource.get_administrators`."""
+    user_id: str
+    role:    ParticipantRole
+
+
+@dataclass
+class AddChatMemberParams:
+    """Parameters for adding a user to a group or channel.
+
+    The bot must be admin of the conversation.
+    """
+    chat_id: int
+    user_id: str
+
+
+@dataclass
+class AddChatMemberResult:
+    description: str
+
+
+@dataclass
+class BanChatMemberParams:
+    """Parameters for removing (kicking) a user from a group or channel.
+
+    The bot must be admin. To remove itself, use :class:`LeaveChatParams` instead.
+    """
+    chat_id: int
+    user_id: str
+
+
+@dataclass
+class BanChatMemberResult:
+    description: str
+
+
+@dataclass
+class LeaveChatParams:
+    """Parameters for the bot to leave a group or channel."""
+    chat_id: int
+
+
+@dataclass
+class LeaveChatResult:
+    description: str
+
+
+@dataclass
+class PromoteChatMemberParams:
+    """Parameters for changing a member's role.
+
+    The bot must be admin.
+
+    * ``role='admin'`` — grants admin rights
+    * ``role='member'`` — revokes admin rights
+    """
+    chat_id: int
+    user_id: str
+    role:    ParticipantRole
+
+
+@dataclass
+class PromoteChatMemberResult:
+    user_id: str
+    role:    ParticipantRole
+
+
+@dataclass
+class GetChatAdministratorsParams:
+    """Parameters for fetching all admins of a group or channel.
+
+    The bot must be a member of the conversation.
+    """
+    chat_id: int
+
+
+@dataclass
+class GetChatAdministratorsResult:
+    admins: list[ChatMemberInfo]
+
+
+@dataclass
+class GetChatMemberParams:
+    """Parameters for looking up a single member.
+
+    Returns :class:`ChatMemberInfo` or raises ``NOT_FOUND`` if the user is
+    not in the conversation.
+    """
+    chat_id: int
+    user_id: str
+
+
+# ─── Invite links ─────────────────────────────────────────────────────────────
+
+@dataclass
+class ChatInviteLink:
+    #: Short identifier used in the URL (e.g. ``"aBcD123xyz"``).
+    code:       str
+    #: Full invite URL (e.g. ``"https://kappelas.com/invite/aBcD123xyz"``).
+    url:        str
+    #: Maximum allowed uses; 0 means unlimited.
+    max_uses:   int
+    #: Current number of times the link has been used.
+    use_count:  int
+    #: Expiry as Unix timestamp (seconds), or ``None`` if permanent.
+    expires_at: int | None
+    #: Creation time as Unix timestamp (seconds).
+    created_at: int
+
+
+@dataclass
+class CreateChatInviteLinkParams:
+    """Parameters for creating an invite link.
+
+    The bot must be admin of the conversation.
+
+    Example::
+
+        # Unlimited uses, never expires
+        params = CreateChatInviteLinkParams(chat_id=42)
+
+        # Max 5 uses, expires in 24 hours
+        params = CreateChatInviteLinkParams(chat_id=42, max_uses=5, expires_in="24h")
+    """
+    chat_id:    int
+    #: ``0`` for unlimited, or a positive number to cap uses.
+    max_uses:   int = 0
+    #: ``"1h"``, ``"24h"``, ``"7d"``, ``"30d"``, or ``"never"`` (default).
+    expires_in: str = ''
+
+
+@dataclass
+class GetChatInviteLinksParams:
+    """Parameters for listing all active invite links.
+
+    The bot must be admin of the conversation.
+    """
+    chat_id: int
+
+
+@dataclass
+class GetChatInviteLinksResult:
+    invite_links: list[ChatInviteLink]
+
+
+@dataclass
+class RevokeChatInviteLinkParams:
+    """Parameters for revoking an invite link.
+
+    The bot must be admin. ``code`` is the :attr:`ChatInviteLink.code` field.
+    """
+    chat_id: int
+    code:    str
+
+
+@dataclass
+class RevokeChatInviteLinkResult:
+    revoked: bool
+    code:    str
+
+
+# ─── Bot group membership ─────────────────────────────────────────────────────
+
+@dataclass
+class BotGroupEntry:
+    """A group or channel the bot belongs to, enriched with its role."""
+    #: Conversation ID — use this as ``chat_id`` in all API calls.
+    chat_id:           int
+    #: ``"group"`` or ``"channel"``. Never ``"private"``.
+    type:              ChatType
+    #: Group or channel name.
+    title:             str | None
+    #: Total number of members (including the bot).
+    participant_count: int
+    #: The bot's role in this conversation.
+    bot_role:          ParticipantRole
+
+
+@dataclass
+class GetMyGroupsResult:
+    """List of groups and channels the bot belongs to."""
+    groups: list[BotGroupEntry]
