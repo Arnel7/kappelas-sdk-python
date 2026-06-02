@@ -254,6 +254,18 @@ class KappelaBot(EventEmitter):
         """
         return await self._http.post_json(f'{self._base}/getBotStatus', {})
 
+    async def pause_in_chat(self, chat_id: int) -> dict[str, Any]:
+        """Pause this bot in ONE conversation only (the bot must be a participant).
+
+        The bot stops receiving messages from that conversation while it keeps working
+        in all its other chats. Unlike :meth:`pause`, this is scoped to one conversation.
+        """
+        return await self._http.post_json(f'{self._base}/pauseBotInChat', {'chat_id': chat_id})
+
+    async def resume_in_chat(self, chat_id: int) -> dict[str, Any]:
+        """Resume this bot in a conversation after :meth:`pause_in_chat`."""
+        return await self._http.post_json(f'{self._base}/resumeBotInChat', {'chat_id': chat_id})
+
     async def _dispatch_webhook(
         self,
         raw_event:  dict[str, Any],

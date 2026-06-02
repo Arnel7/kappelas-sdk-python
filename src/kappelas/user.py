@@ -180,6 +180,19 @@ class KappelaUser(EventEmitter):
         """
         return await self._http.post_json(f'{self._base}/getAutomationStatus', {})
 
+    async def pause_automation_in_chat(self, chat_id: int) -> dict[str, Any]:
+        """Pause your personal automations in ONE conversation only.
+
+        Use this to take over a single chat (e.g. you start replying to X yourself):
+        your AI stops receiving messages from that conversation while it keeps handling
+        all your other chats. Unlike :meth:`pause_automations`, this is scoped to one chat.
+        """
+        return await self._http.post_json(f'{self._base}/pauseAutomationInChat', {'chat_id': chat_id})
+
+    async def resume_automation_in_chat(self, chat_id: int) -> dict[str, Any]:
+        """Resume your personal automations in a conversation."""
+        return await self._http.post_json(f'{self._base}/resumeAutomationInChat', {'chat_id': chat_id})
+
     async def _dispatch_webhook(
         self,
         raw_event:  dict[str, Any],

@@ -133,6 +133,18 @@ await bot.resume()                 # → {'paused': False}
 await bot.get_status()             # → {'paused': bool}
 ```
 
+To pause only in ONE conversation (e.g. you take over a single chat while the AI keeps handling the rest):
+
+```python
+# Personal automation, scoped to one chat
+await me.pause_automation_in_chat(chat_id)    # → {'done': True}
+await me.resume_automation_in_chat(chat_id)   # → {'done': True}
+
+# Bot, scoped to one chat
+await bot.pause_in_chat(chat_id)              # → {'done': True}
+await bot.resume_in_chat(chat_id)             # → {'done': True}
+```
+
 ---
 
 ## Python autocomplete & type hints
