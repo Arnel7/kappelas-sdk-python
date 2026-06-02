@@ -5,7 +5,7 @@ quelqu'un (personne OU bot) admin : on l'ajoute d'abord membre, puis on le prome
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from typing import Any
 
 from .._http import HttpClient
