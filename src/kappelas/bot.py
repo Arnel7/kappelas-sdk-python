@@ -8,6 +8,7 @@ from kappelas._http import HttpClient
 from kappelas._parsers import MESSAGE_TYPES, parse_webhook_body, parse_ws_event
 from kappelas._ws import WSClient
 from kappelas.resources.chats import ChatsResource
+from kappelas.resources.communities import CommunitiesResource
 from kappelas.resources.messages import MessagesResource
 from kappelas.resources.profile import ProfileResource
 from kappelas.resources.webhooks import WebhooksResource
@@ -64,6 +65,8 @@ class KappelaBot(EventEmitter):
     webhooks: WebhooksResource
     #: Read bot profile.
     profile: ProfileResource
+    #: Manage communities (members, roles, invites, requests).
+    communities: CommunitiesResource
 
     def __init__(
         self,
@@ -94,10 +97,11 @@ class KappelaBot(EventEmitter):
         self._ws.on_disconnected = self._on_ws_disconnected
         self._ws.on_error        = self._on_ws_error
 
-        self.messages = MessagesResource(self._http, self._base)
-        self.chats    = ChatsResource(self._http, self._base)
-        self.webhooks = WebhooksResource(self._http, self._base)
-        self.profile  = ProfileResource(self._http, self._base, is_bot=True)
+        self.messages    = MessagesResource(self._http, self._base)
+        self.chats       = ChatsResource(self._http, self._base)
+        self.webhooks    = WebhooksResource(self._http, self._base)
+        self.profile     = ProfileResource(self._http, self._base, is_bot=True)
+        self.communities = CommunitiesResource(self._http, self._base)
 
     # ─── WS callbacks ────────────────────────────────────────────────────────
 

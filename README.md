@@ -37,6 +37,7 @@ Build bots and personal automations — send messages, handle events, manage cha
   - [Chat member management](#chat-member-management)
   - [Invite links (admin only)](#invite-links-admin-only)
   - [getMyGroups](#getmygroups)
+  - [communities](#communities)
   - [webhooks](#webhooks)
   - [profile](#profile)
 - [Keyboards](#keyboards)
@@ -833,6 +834,59 @@ admin_groups = [g for g in result.groups if g.bot_role == 'admin']
 | `title` | `str \| None` | Group or channel name |
 | `participant_count` | `int` | Total members (including the bot) |
 | `bot_role` | `str` | `"member"` or `"admin"` |
+
+---
+
+### `communities`
+
+Manage **communities** with a bot (same rights as a community admin). A bot administers
+a community **only if it is admin of that community**.
+
+> ⚠️ **Distinct scopes.** Being admin of a *group* attached to a community does **not**
+> make you admin of the *community*. `Community.role` is the role **in the community**.
+
+To make someone (a person OR a bot) a community admin, it's two steps — add as member, then promote:
+
+```python
+from kappelas import (
+    AddCommunityMemberParams, PromoteCommunityMemberParams, GetCommunityParams,
+    CreateCommunityParams, CreateCommunityInviteLinkParams, CommunityRequestActionParams,
+)
+
+# 1) add as member   2) promote (same flow for a user or a bot)
+await bot.communities.add_member(AddCommunityMemberParams(community_id=7, user_id='<uuid or bot_user_id>', role='member'))
+await bot.communities.promote_member(PromoteCommunityMemberParams(community_id=7, user_id='<uuid>', role='admin'))
+```
+
+```python
+# Listing
+res = await bot.communities.list()
+for c in res.communities:
+    print(c.id, c.name, '→', c.role)        # 'member' | 'admin'
+admins = await bot.communities.list_admin() # only where the bot is community admin
+detail = await bot.communities.get(GetCommunityParams(community_id=7))  # community + groups + members
+
+# CRUD
+await bot.communities.create(CreateCommunityParams(name='Devs', requires_approval=True))
+await bot.communities.delete(GetCommunityParams(community_id=7))   # admin
+r = await bot.communities.join(GetCommunityParams(community_id=7)) # r.pending if approval-required
+
+# Invite links (admin)
+inv = await bot.communities.create_invite_link(CreateCommunityInviteLinkParams(community_id=7, max_uses=1, expires_in='24h'))
+await bot.communities.get_invite_links(GetCommunityParams(community_id=7))
+await bot.communities.preview_invite(CommunityInviteCodeParams(code='aBcD123'))
+await bot.communities.accept_invite(CommunityInviteCodeParams(code='aBcD123'))  # bot joins via link
+
+# Join requests (admin, when requires_approval)
+reqs = await bot.communities.get_join_requests(GetCommunityParams(community_id=7))
+await bot.communities.approve_join_request(CommunityRequestActionParams(community_id=7, request_id=3))
+
+# Group requests + linking groups (admin)
+await bot.communities.add_group(AddCommunityGroupParams(community_id=7, conversation_id=42))
+```
+
+Other methods: `ban_member`, `leave`, `update`, `revoke_invite_link`, `reject_join_request`,
+`get_group_requests`, `approve_group_request`, `reject_group_request`, `remove_group`.
 
 ---
 

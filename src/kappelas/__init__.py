@@ -86,8 +86,20 @@ from kappelas.types import (
     ReplyMarkup,
     FileInput,
 )
+from .resources.communities import (
+    CommunitiesResource,
+    Community, CommunityMember, CommunityGroup, CommunityDetail,
+    CommunityInvite, CommunityInvitePreview, CommunityJoinRequest, CommunityGroupRequest,
+    CommunityActionResult, GetMyCommunitiesResult, GetCommunityInviteLinksResult,
+    AcceptCommunityInviteResult,
+    GetCommunityParams, CreateCommunityParams, UpdateCommunityParams,
+    AddCommunityMemberParams, PromoteCommunityMemberParams, BanCommunityMemberParams,
+    CreateCommunityInviteLinkParams, RevokeCommunityInviteLinkParams,
+    CommunityInviteCodeParams, CommunityRequestActionParams,
+    AddCommunityGroupParams, RemoveCommunityGroupParams,
+)
 
-__version__ = '0.2.2'
+__version__ = '0.3.0'
 
 __all__ = [
     # Main classes
@@ -148,6 +160,17 @@ __all__ = [
     # Bot group membership
     'BotGroupEntry',
     'GetMyGroupsResult',
+    # Communities
+    'CommunitiesResource',
+    'Community', 'CommunityMember', 'CommunityGroup', 'CommunityDetail',
+    'CommunityInvite', 'CommunityInvitePreview', 'CommunityJoinRequest', 'CommunityGroupRequest',
+    'CommunityActionResult', 'GetMyCommunitiesResult', 'GetCommunityInviteLinksResult',
+    'AcceptCommunityInviteResult',
+    'GetCommunityParams', 'CreateCommunityParams', 'UpdateCommunityParams',
+    'AddCommunityMemberParams', 'PromoteCommunityMemberParams', 'BanCommunityMemberParams',
+    'CreateCommunityInviteLinkParams', 'RevokeCommunityInviteLinkParams',
+    'CommunityInviteCodeParams', 'CommunityRequestActionParams',
+    'AddCommunityGroupParams', 'RemoveCommunityGroupParams',
     # File input
     'FileData',
     'FileInput',
