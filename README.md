@@ -15,6 +15,7 @@ Build bots and personal automations — send messages, handle events, manage cha
 - [Prerequisites](#prerequisites)
 - [Install](#install)
 - [Quick start](#quick-start)
+- [Pausing automations](#pausing-automations)
 - [Python autocomplete & type hints](#python-autocomplete--type-hints)
 - [Events — WebSocket vs Webhook](#events--websocket-vs-webhook)
   - [WebSocket (development)](#websocket-development)
@@ -114,6 +115,22 @@ async def on_message(msg):
     print(f'[{msg.chat_id}] {msg.sender_name}: {msg.text}')
 
 asyncio.run(me.run())
+```
+
+### Pausing automations
+
+Pausing your personal automation makes your account stop receiving incoming messages over `/v1/me`, so an AI auto-responder is never triggered, and any send is rejected with `AUTOMATIONS_PAUSED` — until you resume. Pausing a bot makes it stop receiving incoming messages (no WebSocket push, no webhook) and rejects sends with `BOT_PAUSED` until resumed. This is useful when the human owner wants to take over and stop the AI.
+
+```python
+# Personal automation
+await me.pause_automations()       # → {'automations_paused': True}
+await me.resume_automations()      # → {'automations_paused': False}
+await me.get_automation_status()   # → {'automations_paused': bool}
+
+# Bot
+await bot.pause()                  # → {'paused': True}
+await bot.resume()                 # → {'paused': False}
+await bot.get_status()             # → {'paused': bool}
 ```
 
 ---

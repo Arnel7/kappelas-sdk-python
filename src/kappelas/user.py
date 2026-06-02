@@ -156,6 +156,30 @@ class KappelaUser(EventEmitter):
         else:
             asyncio.run(self._dispatch_webhook(raw_event, event_name, obj))
 
+    async def pause_automations(self) -> dict[str, Any]:
+        """Pause this account's personal automations.
+
+        While paused, the account stops receiving incoming messages over ``/v1/me``
+        (so an AI auto-responder is never triggered) and any send call is rejected
+        with ``AUTOMATIONS_PAUSED``. Useful when the human owner takes over the chat.
+
+        Returns:
+            ``{'automations_paused': True}``.
+        """
+        return await self._http.post_json(f'{self._base}/pauseAutomations', {})
+
+    async def resume_automations(self) -> dict[str, Any]:
+        """Resume this account's personal automations after :meth:`pause_automations`."""
+        return await self._http.post_json(f'{self._base}/resumeAutomations', {})
+
+    async def get_automation_status(self) -> dict[str, Any]:
+        """Return whether this account's personal automations are paused.
+
+        Returns:
+            ``{'automations_paused': bool}``.
+        """
+        return await self._http.post_json(f'{self._base}/getAutomationStatus', {})
+
     async def _dispatch_webhook(
         self,
         raw_event:  dict[str, Any],

@@ -230,6 +230,30 @@ class KappelaBot(EventEmitter):
             # Fallback: run synchronously in a new event loop (scripts)
             asyncio.run(self._dispatch_webhook(raw_event, event_name, obj))
 
+    async def pause(self) -> dict[str, Any]:
+        """Pause this bot.
+
+        While paused, the bot stops receiving incoming messages (no WS push, no
+        webhook) and any send call is rejected with ``BOT_PAUSED``, until
+        :meth:`resume` is called. Lets an owner stop an AI bot on demand.
+
+        Returns:
+            ``{'paused': True}``.
+        """
+        return await self._http.post_json(f'{self._base}/pauseBot', {})
+
+    async def resume(self) -> dict[str, Any]:
+        """Resume this bot after :meth:`pause`."""
+        return await self._http.post_json(f'{self._base}/resumeBot', {})
+
+    async def get_status(self) -> dict[str, Any]:
+        """Return whether this bot is currently paused.
+
+        Returns:
+            ``{'paused': bool}``.
+        """
+        return await self._http.post_json(f'{self._base}/getBotStatus', {})
+
     async def _dispatch_webhook(
         self,
         raw_event:  dict[str, Any],
