@@ -9,10 +9,12 @@ from kappelas._parsers import parse_webhook_body, parse_ws_event
 from kappelas._ws import WSClient
 from kappelas.bot import _to_ws_url
 from kappelas.resources.chats import ChatsResource
+from kappelas.resources.communities import CommunitiesResource
 from kappelas.resources.messages import MessagesResource
 from kappelas.resources.profile import ProfileResource
+from kappelas.resources.stories import StoriesResource
 from kappelas.resources.webhooks import WebhooksResource
-from kappelas.types import CallbackQuery, Message
+from kappelas.types import CallbackQuery, Message, ReplyMarkup, SendResult
 
 
 class KappelaUser(EventEmitter):
@@ -50,6 +52,10 @@ class KappelaUser(EventEmitter):
     webhooks: WebhooksResource
     #: Read your profile.
     profile: ProfileResource
+    #: Manage communities (members, roles, invites, requests) as yourself.
+    communities: CommunitiesResource
+    #: Create and manage your stories (ephemeral, 24 h).
+    stories: StoriesResource
 
     def __init__(
         self,
@@ -65,10 +71,11 @@ class KappelaUser(EventEmitter):
         self._base = '/v1/me'
 
         self._http = HttpClient(
-            base_url    = base_url,
-            auth_header = f'ApiKey {api_key}',
-            max_retries = max_retries,
-            timeout     = timeout,
+            base_url         = base_url,
+            auth_header      = api_key,
+            auth_header_name = 'X-Api-Key',
+            max_retries      = max_retries,
+            timeout          = timeout,
         )
 
         ws_path  = f'{self._base}/ws?api_key={api_key}'
@@ -81,10 +88,12 @@ class KappelaUser(EventEmitter):
         self._ws.on_disconnected = self._on_ws_disconnected
         self._ws.on_error        = self._on_ws_error
 
-        self.messages = MessagesResource(self._http, self._base)
-        self.chats    = ChatsResource(self._http, self._base)
-        self.webhooks = WebhooksResource(self._http, self._base)
-        self.profile  = ProfileResource(self._http, self._base, is_bot=False)
+        self.messages    = MessagesResource(self._http, self._base)
+        self.chats       = ChatsResource(self._http, self._base)
+        self.webhooks    = WebhooksResource(self._http, self._base)
+        self.profile     = ProfileResource(self._http, self._base, is_bot=False)
+        self.communities = CommunitiesResource(self._http, self._base)
+        self.stories     = StoriesResource(self._http, self._base)
 
     # ─── WS callbacks ────────────────────────────────────────────────────────
 
@@ -192,6 +201,32 @@ class KappelaUser(EventEmitter):
     async def resume_automation_in_chat(self, chat_id: int) -> dict[str, Any]:
         """Resume your personal automations in a conversation."""
         return await self._http.post_json(f'{self._base}/resumeAutomationInChat', {'chat_id': chat_id})
+
+    async def reply(
+        self,
+        msg:             Message,
+        text:            str,
+        *,
+        reply_markup:    ReplyMarkup | None = None,
+        delete_previous: bool               = False,
+    ) -> SendResult:
+        """Reply to *msg* by quoting it in the same chat.
+
+        Shorthand for ``me.messages.send(msg.chat_id, text, reply_to_id=msg.id, ...)``.
+
+        Example::
+
+            @me.on('message')
+            async def on_msg(msg):
+                await me.reply(msg, f'Echo: {msg.text}')
+        """
+        return await self.messages.send(
+            msg.chat_id,
+            text,
+            reply_to_id     = msg.id,
+            reply_markup    = reply_markup,
+            delete_previous = delete_previous,
+        )
 
     async def _dispatch_webhook(
         self,

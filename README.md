@@ -39,6 +39,7 @@ Build bots and personal automations — send messages, handle events, manage cha
   - [Invite links (admin only)](#invite-links-admin-only)
   - [getMyGroups](#getmygroups)
   - [communities](#communities)
+  - [stories (KappelaUser only)](#stories-kappelauser-only)
   - [webhooks](#webhooks)
   - [profile](#profile)
 - [Keyboards](#keyboards)
@@ -115,6 +116,16 @@ async def on_message(msg):
     print(f'[{msg.chat_id}] {msg.sender_name}: {msg.text}')
 
 asyncio.run(me.run())
+```
+
+**`KappelaUser` exposes the same resources as `KappelaBot`** — `me.messages`, `me.chats` (including member management and invite links), `me.communities`, `me.webhooks`, `me.profile`, and `me.reply()` — acting as yourself. In addition, `KappelaUser` has [`me.stories`](#stories-kappelauser-only) (user-only). Collections and Hugging Face credentials are bot-only.
+
+```python
+await me.reply(msg, 'Got it! 👋')
+await me.communities.create(CreateCommunityParams(name='Devs', requires_approval=True))
+
+# User-only: stories
+await me.stories.create(type='text', caption='Hello 👋')
 ```
 
 ### Pausing automations
@@ -952,6 +963,47 @@ profile = await bot.profile.get()
 # BotProfile  → user_id, username, is_bot=True, about, description, avatar_url
 # UserProfile → id, username, nom, is_bot=False, is_premium, avatar_url, …
 ```
+
+---
+
+### `stories` (KappelaUser only)
+
+Create and manage **stories** (ephemeral, 24 h) via `me.stories`. Available on `KappelaUser` only — their audience is based on your private-conversation contacts.
+
+For **image/video** stories, pass `media` (bytes, a file-like object, or `FileData`) — the SDK uploads it automatically and uses the resulting media id. For **text/poll** stories, no upload is needed. You can also pass a pre-uploaded `media_id`.
+
+```python
+from kappelas import FileData
+
+# Image story — SDK uploads the file, then creates the story
+story = await me.stories.create(
+    type='image',
+    media=FileData(data=img_bytes, filename='photo.jpg', content_type='image/jpeg'),
+    caption='Sunset 🌇',
+    audience='all',  # 'all' (default) | 'selected' | 'excluded'
+)
+
+# Text story — no media
+await me.stories.create(type='text', caption='Good morning ☀️')
+
+# Restricted audience
+await me.stories.create(type='text', caption='Privé', audience='selected', audience_user_ids=['<uuid>'])
+```
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `stories.create(*, type, media=None, media_id=None, caption=None, audience=None, audience_user_ids=None)` | `Story` | Create a story (uploads `media` automatically for image/video). |
+| `stories.upload_media(file)` | `StoryMediaUpload` | Upload story media manually and get a media id (usually unnecessary). |
+| `stories.list()` | `list[Story]` | Feed of your contacts' active stories. |
+| `stories.list_mine()` | `list[Story]` | Your own stories. |
+| `stories.get(story_id)` | `Story` | A single story (audience-checked server-side). |
+| `stories.delete(story_id)` | `StoryActionResult` | Delete one of your stories. |
+| `stories.view(story_id)` | `StoryActionResult` | Mark a story as viewed. |
+| `stories.get_viewers(story_id)` | `list[StoryView]` | Who viewed your story (owner only). |
+| `stories.get_preferences()` | `StoryPreferences` | Your default audience preference. |
+| `stories.set_preferences(audience, audience_user_ids=None)` | `StoryActionResult` | Set your default audience preference. |
+
+> **Pause** — while automations are paused, story reads still work but creating/deleting/viewing stories is rejected with `AUTOMATIONS_PAUSED`.
 
 ---
 

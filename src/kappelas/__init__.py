@@ -98,8 +98,12 @@ from .resources.communities import (
     CommunityInviteCodeParams, CommunityRequestActionParams,
     AddCommunityGroupParams, RemoveCommunityGroupParams,
 )
+from .resources.stories import (
+    StoriesResource,
+    Story, StoryView, StoryMediaUpload, StoryPreferences, StoryActionResult,
+)
 
-__version__ = '0.5.0'
+__version__ = '0.6.0'
 
 __all__ = [
     # Main classes
@@ -171,6 +175,9 @@ __all__ = [
     'CreateCommunityInviteLinkParams', 'RevokeCommunityInviteLinkParams',
     'CommunityInviteCodeParams', 'CommunityRequestActionParams',
     'AddCommunityGroupParams', 'RemoveCommunityGroupParams',
+    # Stories
+    'StoriesResource',
+    'Story', 'StoryView', 'StoryMediaUpload', 'StoryPreferences', 'StoryActionResult',
     # File input
     'FileData',
     'FileInput',

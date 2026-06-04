@@ -91,16 +91,17 @@ class HttpClient:
 
     def __init__(
         self,
-        base_url:    str,
-        auth_header: str,
-        max_retries: int   = 2,
-        timeout:     float = 30.0,
+        base_url:         str,
+        auth_header:      str,
+        max_retries:      int   = 2,
+        timeout:          float = 30.0,
+        auth_header_name: str   = 'Authorization',
     ) -> None:
         self._base_url    = base_url.rstrip('/')
         self._max_retries = max_retries
         self._timeout     = timeout
         self._client      = httpx.AsyncClient(
-            headers={'Authorization': auth_header},
+            headers={auth_header_name: auth_header},
             timeout=timeout,
         )
 
