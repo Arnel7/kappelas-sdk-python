@@ -7,6 +7,7 @@ la story.
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any
 
@@ -135,6 +136,8 @@ class StoriesResource:
         media: FileInput | None = None,
         media_id: str | None = None,
         caption: str | None = None,
+        link: str | None = None,
+        link_label: str | None = None,
         audience: str | None = None,
         audience_user_ids: list[str] | None = None,
     ) -> Story:
@@ -148,6 +151,9 @@ class StoriesResource:
             media:             Fichier image/vidéo (bytes, file-like, ou FileData) — uploadé auto.
             media_id:          Alternative à ``media`` : un media_id déjà uploadé.
             caption:           Légende.
+            link:              Lien CTA cliquable affiché sur la story par les apps Kappela.
+                               Encodé dans la caption en JSON ({text, link, linkLabel}).
+            link_label:        Libellé optionnel du lien CTA (ex. "Voir"). Nécessite ``link``.
             audience:          'all' (défaut) | 'selected' | 'excluded'.
             audience_user_ids: Requis si ``audience`` vaut 'selected' ou 'excluded'.
         """
@@ -160,8 +166,16 @@ class StoriesResource:
         body: dict[str, Any] = {'media_type': type}
         if mid:
             body['media_id'] = mid
-        if caption is not None:
-            body['caption'] = caption
+        cap = caption
+        if link:
+            # Le lien CTA est porté dans la caption en JSON ({text, link, linkLabel}) —
+            # format lu par les apps Kappela (pas de champ backend dédié).
+            env = {'text': caption or '', 'link': link}
+            if link_label:
+                env['linkLabel'] = link_label
+            cap = json.dumps(env, ensure_ascii=False)
+        if cap is not None:
+            body['caption'] = cap
         if audience is not None:
             body['audience'] = audience
         if audience_user_ids is not None:

@@ -103,7 +103,7 @@ from .resources.stories import (
     Story, StoryView, StoryMediaUpload, StoryPreferences, StoryActionResult,
 )
 
-__version__ = '0.6.0'
+__version__ = '0.6.1'
 
 __all__ = [
     # Main classes
