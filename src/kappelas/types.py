@@ -197,6 +197,32 @@ class ScrollKeyboard:
 ReplyMarkup = InlineKeyboard | ReplyKeyboard | ScrollKeyboard
 
 
+# ─── Action button ─────────────────────────────────────────────────────────────
+
+#: Action button type. The meaning of ``value`` follows it:
+#:
+#: - ``"copy_text"``     — copies ``value`` to the clipboard (e.g. an OTP code).
+#: - ``"external_link"`` — opens ``value`` (an external URL) in the in-app browser.
+#: - ``"internal_link"`` — opens ``value`` as an in-app deep link.
+#: - ``"join"``          — ``value`` is an invite link; tapping joins directly.
+ActionButtonType = str
+
+
+@dataclass
+class ActionButton:
+    """A single button rendered at the foot of the message bubble (WhatsApp-style),
+    distinct from inline keyboards. Performs a client-side action (copy / open / join)
+    instead of firing a ``callback_query``.
+
+    Set it via ``messages.send(..., action_button=...)``. When both ``action_button``
+    and ``reply_markup`` are given, ``action_button`` takes precedence. ``label`` is
+    1–100 chars, ``value`` 1–2048.
+    """
+    label: str
+    type:  ActionButtonType  # copy_text | external_link | internal_link | join
+    value: str
+
+
 # ─── Carousel ────────────────────────────────────────────────────────────────
 
 @dataclass

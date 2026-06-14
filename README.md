@@ -409,7 +409,20 @@ async def on_callback(cb):
 
 ### `messages`
 
-#### `messages.send(chat_id, text, *, reply_markup, reply_to_id, delete_previous)` → `SendResult`
+> **Recipient — `chat_id` or `user_id`.** Every send / edit / delete / typing method
+> accepts **either** `chat_id` (int) **or** the keyword `user_id` (str UUID). With
+> `user_id` the message is routed to your 1-to-1 private chat with that user — a **bot**
+> requires the conversation to already exist (`FORBIDDEN` otherwise); a **user** creates
+> it automatically (find-or-create). Applies to `send`, `send_photo`/`send_video`/
+> `send_document`/`send_audio`, `send_carousel`, `send_typing`, `edit` and `delete`
+> (for `edit`/`delete` the conversation must already exist).
+>
+> ```python
+> await bot.messages.send(user_id='f19f2127-…', text='Hi')
+> await me.messages.send_photo(user_id=cb.sender_id, photo=f)
+> ```
+
+#### `messages.send(chat_id, text, *, user_id, reply_markup, action_button, reply_to_id, delete_previous)` → `SendResult`
 
 ```python
 result = await bot.messages.send(
@@ -424,6 +437,32 @@ result = await bot.messages.send(
 )
 # → SendResult(message_id=..., created_at=...)
 ```
+
+##### Action button
+
+`action_button` renders a single button at the **foot of the bubble** (WhatsApp-style),
+distinct from inline keyboards — it performs a client-side action instead of firing a
+`callback_query`. It takes precedence over `reply_markup`.
+
+```python
+from kappelas import ActionButton
+
+# One-time code the user copies with a tap
+await bot.messages.send(
+    chat_id=42,
+    text='Your code is 837192',
+    action_button=ActionButton(label='Copy code', type='copy_text', value='837192'),
+)
+```
+
+| `type` | What a tap does | `value` is… |
+|--------|-----------------|-------------|
+| `copy_text` | Copies `value` to the clipboard | The text to copy (e.g. an OTP) |
+| `external_link` | Opens `value` in the in-app browser | An external URL |
+| `internal_link` | Opens `value` as an in-app deep link | An internal Kappela link |
+| `join` | Joins the chat directly (no landing screen) | An invite link (group/channel/community) |
+
+`label` is 1–100 characters, `value` 1–2048.
 
 #### `messages.send_photo(chat_id, photo, *, caption, reply_to_id, delete_previous, reply_markup)` → `SendMediaResult`
 

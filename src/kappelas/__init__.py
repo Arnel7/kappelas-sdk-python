@@ -37,6 +37,9 @@ from kappelas.types import (
     ReplyKeyboardButton,
     ScrollKeyboard,
     ScrollKeyboardButton,
+    # Action button
+    ActionButton,
+    ActionButtonType,
     # Carousel
     CarouselCard,
     # Webhook
@@ -127,6 +130,9 @@ __all__ = [
     'ScrollKeyboard',
     'ScrollKeyboardButton',
     'ReplyMarkup',
+    # Action button
+    'ActionButton',
+    'ActionButtonType',
     # Carousel
     'CarouselCard',
     # Webhook
