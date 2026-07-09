@@ -6,6 +6,7 @@ from typing import Any
 
 
 from kappelas._http import HttpClient, _serialize_keyboard_button, _serialize_reply_markup
+from kappelas.errors import KappelaError
 from kappelas._parsers import (
     parse_delete_result,
     parse_edit_message_result,
@@ -156,6 +157,31 @@ class MessagesResource:
             f'{self._base}/sendAudio', fields, 'audio', self._require_file(audio)
         )
         return parse_send_media_result(raw)
+
+    async def get_file(self, media_id: str) -> dict[str, Any]:
+        """Resolve a ``media_id`` to a signed download URL and its metadata.
+
+        Returns a dict: ``{media_id, url, filename, content_type, size_bytes, expires_in}``.
+        Works for any media the account/bot can access (i.e. it is a participant of the
+        conversation where the media was shared) — e.g. a received voice note.
+        """
+        return await self._http.get(f'{self._base}/getFile?media_id={media_id}')
+
+    async def download_file(self, media_id: str) -> bytes:
+        """Resolve *and* download the raw bytes of a media file.
+
+        Convenience over :meth:`get_file` — typically used to fetch a received voice note
+        and transcribe it (speech-to-text). Downloads the short-lived signed URL directly.
+        """
+        import httpx
+        info = await self.get_file(media_id)
+        url = info.get('url') if isinstance(info, dict) else None
+        if not url:
+            raise KappelaError('media has no download url', 'NOT_FOUND', 404, None)
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            return resp.content
 
     async def send_carousel(
         self,

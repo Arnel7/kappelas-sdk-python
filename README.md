@@ -476,6 +476,29 @@ with open('banner.png', 'rb') as f:
 
 Same signature — replace the file parameter with your file input.
 
+#### `messages.get_file(media_id)` → `dict`
+
+Resolve a received message's `media_id` to a short-lived **signed download URL** and its
+metadata. The URL downloads the file directly — no auth header needed.
+
+```python
+info = await bot.messages.get_file(msg.media_id)
+# → {'media_id': ..., 'url': ..., 'filename': ..., 'content_type': ..., 'size_bytes': ..., 'expires_in': ...}
+```
+
+#### `messages.download_file(media_id)` → `bytes`
+
+Convenience over `get_file`: resolves the id **and** downloads the raw bytes in one call —
+e.g. to fetch a received voice note and transcribe it (speech-to-text).
+
+```python
+@bot.on('message')
+async def on_message(msg):
+    if msg.media_id and msg.type in ('audio', 'voice'):
+        audio = await bot.messages.download_file(msg.media_id)  # raw bytes
+        # → feed `audio` to your STT engine, then reply with the transcript
+```
+
 #### `messages.send_carousel(chat_id, carousel, *, text, quick_reply_buttons, reply_to_id)` → `SendCarouselResult`
 
 ```python
