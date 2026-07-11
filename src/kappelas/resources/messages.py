@@ -77,13 +77,13 @@ class MessagesResource:
         raw = await self._http.post_json(f'{self._base}/sendMessage', body)
         return parse_send_result(raw)
 
-    def _ping_typing(self, chat_id: int | None, user_id: str | None) -> None:
+    def _ping_typing(self, chat_id: int | None, user_id: str | None, action: str | None = None) -> None:
         """Émet un indicateur de saisie (fire-and-forget) avant l'upload d'un média,
         pour que le destinataire voie une activité durant un envoi lent (photo, vocal…).
         Un échec du ping ne doit jamais casser l'envoi réel."""
         async def _fire() -> None:
             try:
-                await self.send_typing(chat_id=chat_id, user_id=user_id, is_typing=True)
+                await self.send_typing(chat_id=chat_id, user_id=user_id, is_typing=True, action=action)
             except Exception:
                 pass
         try:
@@ -113,7 +113,7 @@ class MessagesResource:
             delete_previous: Delete the bot's previous message first.
             reply_markup:    Optional keyboard markup.
         """
-        self._ping_typing(chat_id, user_id)
+        self._ping_typing(chat_id, user_id, 'sending_photo')
         fields = self._media_fields(chat_id, user_id, caption, reply_to_id, delete_previous, reply_markup)
         raw = await self._http.post_multipart(
             f'{self._base}/sendPhoto', fields, 'photo', self._require_file(photo)
@@ -132,7 +132,7 @@ class MessagesResource:
         reply_markup:    ReplyMarkup | None = None,
     ) -> SendMediaResult:
         """Send a video file."""
-        self._ping_typing(chat_id, user_id)
+        self._ping_typing(chat_id, user_id, 'sending_video')
         fields = self._media_fields(chat_id, user_id, caption, reply_to_id, delete_previous, reply_markup)
         raw = await self._http.post_multipart(
             f'{self._base}/sendVideo', fields, 'video', self._require_file(video)
@@ -151,7 +151,7 @@ class MessagesResource:
         reply_markup:    ReplyMarkup | None = None,
     ) -> SendMediaResult:
         """Send a document / file."""
-        self._ping_typing(chat_id, user_id)
+        self._ping_typing(chat_id, user_id, 'sending_document')
         fields = self._media_fields(chat_id, user_id, caption, reply_to_id, delete_previous, reply_markup)
         raw = await self._http.post_multipart(
             f'{self._base}/sendDocument', fields, 'document', self._require_file(document)
@@ -170,7 +170,7 @@ class MessagesResource:
         reply_markup:    ReplyMarkup | None = None,
     ) -> SendMediaResult:
         """Send an audio file."""
-        self._ping_typing(chat_id, user_id)
+        self._ping_typing(chat_id, user_id, 'recording_audio')
         fields = self._media_fields(chat_id, user_id, caption, reply_to_id, delete_previous, reply_markup)
         raw = await self._http.post_multipart(
             f'{self._base}/sendAudio', fields, 'audio', self._require_file(audio)
@@ -243,6 +243,7 @@ class MessagesResource:
         *,
         user_id:   str | None = None,
         is_typing: bool       = True,
+        action:    str | None = None,
     ) -> TypingResult:
         """Show or hide the typing indicator.
 
@@ -250,11 +251,14 @@ class MessagesResource:
             chat_id:   Target chat ID (or use *user_id*).
             user_id:   Target user UUID — routes to your private chat with them.
             is_typing: ``True`` to show, ``False`` to hide. Defaults to ``True``.
+            action:    Indicateur d'activité distinct (façon Telegram) : ``recording_audio``,
+                       ``sending_photo``, ``sending_video``, ``sending_document``. Envoyé
+                       automatiquement par les méthodes d'envoi média. ``None`` = frappe texte.
         """
-        raw = await self._http.post_json(
-            f'{self._base}/sendTyping',
-            {**self._recipient(chat_id, user_id), 'is_typing': is_typing},
-        )
+        body: dict[str, Any] = {**self._recipient(chat_id, user_id), 'is_typing': is_typing}
+        if action:
+            body['action'] = action
+        raw = await self._http.post_json(f'{self._base}/sendTyping', body)
         return parse_typing_result(raw)
 
     async def edit(
