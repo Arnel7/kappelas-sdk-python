@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from dataclasses import asdict
 from typing import Any
@@ -76,6 +77,20 @@ class MessagesResource:
         raw = await self._http.post_json(f'{self._base}/sendMessage', body)
         return parse_send_result(raw)
 
+    def _ping_typing(self, chat_id: int | None, user_id: str | None) -> None:
+        """Émet un indicateur de saisie (fire-and-forget) avant l'upload d'un média,
+        pour que le destinataire voie une activité durant un envoi lent (photo, vocal…).
+        Un échec du ping ne doit jamais casser l'envoi réel."""
+        async def _fire() -> None:
+            try:
+                await self.send_typing(chat_id=chat_id, user_id=user_id, is_typing=True)
+            except Exception:
+                pass
+        try:
+            asyncio.get_running_loop().create_task(_fire())
+        except RuntimeError:
+            pass  # pas de boucle asyncio courante (ne devrait pas arriver en contexte async)
+
     async def send_photo(
         self,
         chat_id:         int | None = None,
@@ -98,6 +113,7 @@ class MessagesResource:
             delete_previous: Delete the bot's previous message first.
             reply_markup:    Optional keyboard markup.
         """
+        self._ping_typing(chat_id, user_id)
         fields = self._media_fields(chat_id, user_id, caption, reply_to_id, delete_previous, reply_markup)
         raw = await self._http.post_multipart(
             f'{self._base}/sendPhoto', fields, 'photo', self._require_file(photo)
@@ -116,6 +132,7 @@ class MessagesResource:
         reply_markup:    ReplyMarkup | None = None,
     ) -> SendMediaResult:
         """Send a video file."""
+        self._ping_typing(chat_id, user_id)
         fields = self._media_fields(chat_id, user_id, caption, reply_to_id, delete_previous, reply_markup)
         raw = await self._http.post_multipart(
             f'{self._base}/sendVideo', fields, 'video', self._require_file(video)
@@ -134,6 +151,7 @@ class MessagesResource:
         reply_markup:    ReplyMarkup | None = None,
     ) -> SendMediaResult:
         """Send a document / file."""
+        self._ping_typing(chat_id, user_id)
         fields = self._media_fields(chat_id, user_id, caption, reply_to_id, delete_previous, reply_markup)
         raw = await self._http.post_multipart(
             f'{self._base}/sendDocument', fields, 'document', self._require_file(document)
@@ -152,6 +170,7 @@ class MessagesResource:
         reply_markup:    ReplyMarkup | None = None,
     ) -> SendMediaResult:
         """Send an audio file."""
+        self._ping_typing(chat_id, user_id)
         fields = self._media_fields(chat_id, user_id, caption, reply_to_id, delete_previous, reply_markup)
         raw = await self._http.post_multipart(
             f'{self._base}/sendAudio', fields, 'audio', self._require_file(audio)
