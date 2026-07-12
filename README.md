@@ -526,8 +526,18 @@ When a user clicks a carousel card button, a `callback_query` fires with `callba
 # Edit text only
 await bot.messages.edit(42, 123, new_text='Updated!')
 
-# Edit inline keyboard only — keep existing text
 from dataclasses import asdict
+
+# Edit text AND inline keyboard together — ex. un menu qui se coche au clic
+await bot.messages.edit(42, 123,
+    new_text='Tu as choisi : ✅ Oui',
+    new_extra_data=asdict(InlineKeyboard(inline_keyboard=[[
+        InlineKeyboardButton(text='✅ Oui ✓', callback_data='yes'),
+        InlineKeyboardButton(text='❌ Non',   callback_data='no'),
+    ]])),
+)
+
+# Edit inline keyboard only — omit new_text to keep the existing text
 await bot.messages.edit(42, 123, new_extra_data=asdict(
     InlineKeyboard(inline_keyboard=[[
         InlineKeyboardButton(text='Done ✅', callback_data='done'),
@@ -536,7 +546,9 @@ await bot.messages.edit(42, 123, new_extra_data=asdict(
 # → EditMessageResult(edited=True, message_id=123)
 ```
 
-When `new_extra_data` is provided, `new_text` is optional — you can edit the keyboard without touching the text.
+- Provide **both** `new_text` and `new_extra_data` to change the text and the keyboard in one edit.
+- Provide **only** `new_extra_data` (omit `new_text`) to change the keyboard while keeping the text.
+- Provide **only** `new_text` to change just the text (the keyboard is left untouched).
 
 #### `messages.send_typing(chat_id, *, is_typing)` → `TypingResult`
 
