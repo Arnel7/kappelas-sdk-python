@@ -77,6 +77,20 @@ class MessagesResource:
         raw = await self._http.post_json(f'{self._base}/sendMessage', body)
         return parse_send_result(raw)
 
+    async def close_webview(self, chat_id: int) -> dict[str, Any]:
+        """Remotely close the in-app WebView opened by an ``open_webview`` action button on the
+        recipient's device(s). Use it when the outcome is confirmed server-side (e.g. a payment
+        webhook) instead of relying on the web page calling ``Kappelas.close()``. The event reaches
+        **all** of the recipient's connected devices (personal real-time channel).
+
+        Args:
+            chat_id: Conversation whose recipient(s) should have their WebView closed.
+
+        Returns:
+            ``{"ok": True, "sent": <recipients notified>}``.
+        """
+        return await self._http.post_json(f'{self._base}/closeWebview', {'chat_id': chat_id})
+
     def _ping_typing(self, chat_id: int | None, user_id: str | None, action: str | None = None) -> None:
         """Émet un indicateur de saisie (fire-and-forget) avant l'upload d'un média,
         pour que le destinataire voie une activité durant un envoi lent (photo, vocal…).

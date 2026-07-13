@@ -202,9 +202,12 @@ ReplyMarkup = InlineKeyboard | ReplyKeyboard | ScrollKeyboard
 #: Action button type. The meaning of ``value`` follows it:
 #:
 #: - ``"copy_text"``     — copies ``value`` to the clipboard (e.g. an OTP code).
-#: - ``"external_link"`` — opens ``value`` (an external URL) in the in-app browser.
+#: - ``"external_link"`` — opens ``value`` (an external URL) in the system browser (leaves the app).
 #: - ``"internal_link"`` — opens ``value`` as an in-app deep link.
 #: - ``"join"``          — ``value`` is an invite link; tapping joins directly.
+#: - ``"open_webview"``  — opens ``value`` (URL) in an in-app WebView (stays inside Kappelas). Ideal
+#:   for payments: the page can close itself via ``Kappelas.close()``, or close it remotely with
+#:   :meth:`MessagesResource.close_webview`.
 ActionButtonType = str
 
 
