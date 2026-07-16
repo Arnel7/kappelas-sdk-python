@@ -40,6 +40,10 @@ from kappelas.types import (
     # Action button
     ActionButton,
     ActionButtonType,
+    # Form (interactive card)
+    Form,
+    FormField,
+    FormInput,
     # Carousel
     CarouselCard,
     # Webhook
@@ -106,7 +110,7 @@ from .resources.stories import (
     Story, StoryView, StoryMediaUpload, StoryPreferences, StoryActionResult,
 )
 
-__version__ = '0.6.1'
+__version__ = '0.9.1'
 
 __all__ = [
     # Main classes
@@ -133,6 +137,10 @@ __all__ = [
     # Action button
     'ActionButton',
     'ActionButtonType',
+    # Form (interactive card)
+    'Form',
+    'FormField',
+    'FormInput',
     # Carousel
     'CarouselCard',
     # Webhook

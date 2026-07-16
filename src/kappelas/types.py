@@ -226,6 +226,43 @@ class ActionButton:
     value: str
 
 
+# ─── Form (interactive card) ───────────────────────────────────────────────────
+
+#: Field input kind: ``"single"`` (one choice), ``"multi"`` (several),
+#: ``"ranking"`` (order the options), or ``"text"`` (free text).
+FormInput = str
+
+
+@dataclass
+class FormField:
+    """One field of an interactive :class:`Form` card.
+
+    - ``single`` / ``multi`` / ``ranking`` need ``options`` (2–12 short labels).
+    - ``text`` needs no options; ``placeholder`` is an optional hint.
+    """
+    label:       str
+    input:       FormInput               # single | multi | ranking | text
+    options:     list[str] | None = None
+    id:          str | None       = None  # stable key in the answers; auto-assigned if omitted
+    required:    bool             = False
+    placeholder: str | None       = None
+
+
+@dataclass
+class Form:
+    """An interactive form card sent inside a message (choices, ranking, free text)
+    with a submit button. The recipient fills it and taps *submit*; the answers come
+    back to you as a ``callback_query`` whose ``callback_data`` is ``"form::<json>"``
+    where ``<json>`` is ``{"form_id": ..., "answers": {<field id>: [...]}}``.
+
+    Send it via ``messages.send(..., form=...)``. Works in private and group chats.
+    ``title`` ≤ 512 chars, 1–10 ``fields``.
+    """
+    title:        str
+    fields:       list[FormField]
+    submit_label: str = "Envoyer"
+
+
 # ─── Carousel ────────────────────────────────────────────────────────────────
 
 @dataclass

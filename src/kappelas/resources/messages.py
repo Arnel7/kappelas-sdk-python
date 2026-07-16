@@ -22,6 +22,7 @@ from kappelas.types import (
     DeleteResult,
     EditMessageResult,
     FileInput,
+    Form,
     ReplyMarkup,
     SendCarouselResult,
     SendMediaResult,
@@ -53,6 +54,7 @@ class MessagesResource:
         user_id:         str | None          = None,
         reply_markup:    ReplyMarkup | None  = None,
         action_button:   ActionButton | None = None,
+        form:            Form | None         = None,
         reply_to_id:     int | None          = None,
         delete_previous: bool                = False,
     ) -> SendResult:
@@ -60,17 +62,21 @@ class MessagesResource:
 
         Args:
             chat_id:         Target chat ID (or use *user_id*).
-            text:            Message text.
+            text:            Message text (shown as the card title / fallback for a *form*).
             user_id:         Target user UUID — routes to your private chat with them.
             reply_markup:    Optional keyboard markup.
             action_button:   Optional foot-of-bubble button (copy / link / join).
                              Takes precedence over *reply_markup*.
+            form:            Optional interactive form card (choices / ranking / free text with a
+                             submit button). Answers return as a ``callback_query`` whose
+                             ``callback_data`` is ``"form::<json>"``. Takes precedence over the others.
             reply_to_id:     Reply to an existing message by ID.
             delete_previous: If ``True``, delete the bot's previous message first.
         """
         body: dict[str, Any] = {**self._recipient(chat_id, user_id), 'text': text}
         if reply_markup    is not None:  body['reply_markup']    = _serialize_reply_markup(reply_markup)
         if action_button   is not None:  body['action_button']   = asdict(action_button)
+        if form            is not None:  body['form']            = asdict(form)
         if reply_to_id     is not None:  body['reply_to_id']     = reply_to_id
         if delete_previous:              body['delete_previous'] = True
 
