@@ -57,6 +57,7 @@ class MessagesResource:
         form:            Form | None         = None,
         reply_to_id:     int | None          = None,
         delete_previous: bool                = False,
+        extra_data:      Any                 = None,
     ) -> SendResult:
         """Send a text message.
 
@@ -72,6 +73,10 @@ class MessagesResource:
                              ``callback_data`` is ``"form::<json>"``. Takes precedence over the others.
             reply_to_id:     Reply to an existing message by ID.
             delete_previous: If ``True``, delete the bot's previous message first.
+            extra_data:      Free metadata attached to the message (serialisable object), e.g.
+                             ``{"kai_thread": "3"}`` to bind it to a conversation thread. Merged
+                             *under* the keys the server builds (form / action_button /
+                             reply_markup), which always take precedence.
         """
         body: dict[str, Any] = {**self._recipient(chat_id, user_id), 'text': text}
         if reply_markup    is not None:  body['reply_markup']    = _serialize_reply_markup(reply_markup)
@@ -79,6 +84,7 @@ class MessagesResource:
         if form            is not None:  body['form']            = asdict(form)
         if reply_to_id     is not None:  body['reply_to_id']     = reply_to_id
         if delete_previous:              body['delete_previous'] = True
+        if extra_data      is not None:  body['extra_data']      = extra_data
 
         raw = await self._http.post_json(f'{self._base}/sendMessage', body)
         return parse_send_result(raw)
